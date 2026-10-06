@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { ActivityLevel, api, BodyProfile, BodySummary, del, Forecast, post, put } from '@/lib/api';
+import { ActivityLevel, ActivityMode, api, BodyProfile, BodySummary, del, Forecast, post, put } from '@/lib/api';
 import { fmt, fmtSigned, formatDateShort, today } from '@/lib/format';
 import { useFetch } from '@/lib/useFetch';
 import { Card, Empty, ErrorBox, Loading, PageHeader } from '@/components/ui';
@@ -13,6 +13,15 @@ const ACTIVITY: Record<ActivityLevel, string> = {
   moderate: 'Moderado (3–5 treinos/semana)',
   high: 'Alto (6–7 treinos/semana)',
   athlete: 'Atleta (treino intenso ou trabalho físico)',
+};
+
+/** Com treinos registrados, o fator descreve só o dia a dia (fora dos treinos). */
+const ACTIVITY_DAILY: Record<ActivityLevel, string> = {
+  sedentary: 'Sedentário no dia a dia (trabalho sentado)',
+  light: 'Pouco ativo (fica em pé ou anda um pouco)',
+  moderate: 'Ativo (trabalho com esforço físico leve)',
+  high: 'Muito ativo (trabalho físico pesado)',
+  athlete: 'Extremamente ativo (esforço físico o dia todo)',
 };
 
 const GOALS = [
@@ -36,6 +45,7 @@ function ProfileForm({ summary, onSaved }: { summary: BodySummary; onSaved: () =
     proteinPerKg: p ? String(p.proteinPerKg) : '1.8',
     fatPercent: p ? String(p.fatPercent) : '25',
     bmrFormula: p?.bmrFormula ?? 'mifflin',
+    activityMode: (p?.activityMode ?? 'tracked') as ActivityMode,
     currentWeightKg: '',
   });
   const [saving, setSaving] = useState(false);
@@ -64,6 +74,7 @@ function ProfileForm({ summary, onSaved }: { summary: BodySummary; onSaved: () =
         proteinPerKg: num(form.proteinPerKg),
         fatPercent: num(form.fatPercent),
         bmrFormula: form.bmrFormula as BodyProfile['bmrFormula'],
+        activityMode: form.activityMode,
       };
       if (needsWeight) body.currentWeightKg = num(form.currentWeightKg);
       await put('/body/profile', body);
@@ -100,9 +111,16 @@ function ProfileForm({ summary, onSaved }: { summary: BodySummary; onSaved: () =
         </label>
       )}
       <label className="field sm:col-span-2">
-        <span>Nível de atividade</span>
+        <span>Como contar o gasto diário</span>
+        <select value={form.activityMode} onChange={set('activityMode')}>
+          <option value="tracked">Base do dia a dia + treinos registrados (recomendado)</option>
+          <option value="level">Fator de atividade fixo (treinos não somam)</option>
+        </select>
+      </label>
+      <label className="field sm:col-span-2">
+        <span>{form.activityMode === 'tracked' ? 'Atividade no dia a dia (fora dos treinos)' : 'Nível de atividade (inclui seus treinos)'}</span>
         <select value={form.activityLevel} onChange={set('activityLevel')}>
-          {Object.entries(ACTIVITY).map(([v, l]) => (
+          {Object.entries(form.activityMode === 'tracked' ? ACTIVITY_DAILY : ACTIVITY).map(([v, l]) => (
             <option key={v} value={v}>
               {l}
             </option>
@@ -330,7 +348,7 @@ export default function BodyPage() {
               {[
                 ['Peso atual', `${fmt(b.energy.weightKg, 1)} kg`, b.bmi ? `IMC ${fmt(b.bmi, 1)}` : ''],
                 ['Metabolismo basal', `${fmt(b.energy.bmr)} kcal`, `${b.energy.age} anos`],
-                ['Gasto diário (TDEE)', `${fmt(b.energy.tdee)} kcal`, 'basal × atividade'],
+                ['Gasto diário (TDEE)', `${fmt(b.energy.tdee)} kcal`, b.profile?.activityMode === 'tracked' ? 'base sem treinos; treinos somam por dia' : 'basal × atividade'],
                 ['Meta calórica', `${fmt(b.energy.targetKcal)} kcal`, b.profile && b.profile.weeklyGoalKg !== 0 ? `${fmtSigned(b.profile.weeklyGoalKg, 2)} kg/semana` : 'manutenção'],
                 ['Macros da meta', `P ${fmt(b.energy.macros.protein)} · C ${fmt(b.energy.macros.carbs)} · G ${fmt(b.energy.macros.fat)}`, 'gramas por dia'],
               ].map(([k, v, hint]) => (
@@ -395,7 +413,8 @@ export default function BodyPage() {
                   {[
                     ['Sexo', b.profile.sex === 'male' ? 'Masculino' : 'Feminino'],
                     ['Altura', `${fmt(b.profile.heightCm)} cm`],
-                    ['Atividade', ACTIVITY[b.profile.activityLevel].split(' (')[0]],
+                    ['Gasto diário', b.profile.activityMode === 'tracked' ? 'Base + treinos registrados' : 'Fator de atividade fixo'],
+                    ['Atividade', (b.profile.activityMode === 'tracked' ? ACTIVITY_DAILY : ACTIVITY)[b.profile.activityLevel].split(' (')[0]],
                     ['Objetivo', GOALS.find((g) => g.value === b.profile!.weeklyGoalKg)?.label ?? `${b.profile.weeklyGoalKg} kg/sem`],
                     ['Peso-alvo', b.profile.targetWeightKg ? `${fmt(b.profile.targetWeightKg, 1)} kg` : '—'],
                     ['Proteína', `${fmt(b.profile.proteinPerKg, 1)} g/kg`],

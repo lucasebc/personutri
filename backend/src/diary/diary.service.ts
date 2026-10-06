@@ -2,12 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { isValidDate, weekday } from '../common/dates';
-import { totalOf, viewItem } from '../common/item-view';
-import { emptyNutrition, Nutrition, roundNutrition, sumNutrition } from '../common/nutrients';
+import { totalOf } from '../common/item-view';
+import { emptyNutrition, Nutrition, sumNutrition } from '../common/nutrients';
 import { DietsService } from '../diets/diets.service';
 import { FoodsService } from '../foods/foods.service';
 import { ItemDto } from '../common/item.dto';
 import { DiaryEntry, DiaryItem } from './diary.entity';
+import { diaryEntryView, planDiarySync } from './diary-view';
 import { CreateFreeEntryDto, UpdateEntryDto } from './diary.dto';
 
 @Injectable()
@@ -24,17 +25,7 @@ export class DiaryService {
   }
 
   view(e: DiaryEntry) {
-    return {
-      id: e.id,
-      date: e.date,
-      time: e.time,
-      label: e.label,
-      kind: e.kind,
-      status: e.status,
-      mealId: e.mealId,
-      items: e.items.map(viewItem),
-      totals: roundNutrition(totalOf(e.items)),
-    };
+    return diaryEntryView(e);
   }
 
   /**
@@ -43,17 +34,22 @@ export class DiaryService {
    */
   async syncPlanned(date: string): Promise<void> {
     const diet = await this.diets.getActiveEntity();
-    const wd = weekday(date);
-    const wanted = diet ? diet.entries.filter((e) => e.weekdays.includes(wd)) : [];
     const existing = await this.repo.findBy({ date, kind: 'planned' });
-
-    const wantedIds = new Set(wanted.map((w) => w.id));
-    const stale = existing.filter((e) => e.status === 'pending' && !wantedIds.has(e.dietEntryId ?? -1));
+    const { removeIds, create } = planDiarySync({
+      weekday: weekday(date),
+      slots: (diet?.entries ?? []).map((e) => ({
+        id: e.id,
+        label: e.label,
+        time: e.time,
+        weekdays: e.weekdays,
+        mealId: e.meal.id,
+        items: e.meal.items.map((i) => ({ food: i.food, grams: i.grams })),
+      })),
+      existing,
+    });
+    const stale = existing.filter((e) => removeIds.includes(e.id));
     if (stale.length) await this.repo.remove(stale);
-
-    const have = new Set(existing.map((e) => e.dietEntryId));
-    for (const w of wanted) {
-      if (have.has(w.id)) continue;
+    for (const w of create) {
       await this.repo.save(
         this.repo.create({
           date,
@@ -62,8 +58,8 @@ export class DiaryService {
           kind: 'planned',
           status: 'pending',
           dietEntryId: w.id,
-          mealId: w.meal.id,
-          items: w.meal.items.map((i) => ({ food: i.food, grams: i.grams }) as DiaryItem),
+          mealId: w.mealId,
+          items: w.items.map((i) => ({ food: i.food, grams: i.grams }) as DiaryItem),
         }),
       );
     }

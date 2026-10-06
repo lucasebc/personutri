@@ -1,11 +1,11 @@
-import { Food, foodNutrition } from '../foods/food.entity';
+import { FoodLike, foodNutrition } from './food-like';
 import { Nutrition, roundNutrition, scaleNutrition, sumNutrition } from './nutrients';
 
 /** Item (alimento + quantidade) de uma refeição ou do diário. */
 export interface ItemLike {
   id: number;
   grams: number;
-  food: Food;
+  food: FoodLike;
 }
 
 export interface ItemView {
@@ -13,7 +13,7 @@ export interface ItemView {
   foodId: number;
   foodName: string;
   brand: string | null;
-  source: Food['source'];
+  source: FoodLike['source'];
   grams: number;
   nutrition: Nutrition;
 }

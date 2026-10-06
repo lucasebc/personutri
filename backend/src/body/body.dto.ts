@@ -32,6 +32,10 @@ export class ProfileDto {
   @IsOptional() @IsIn(['mifflin', 'katch'])
   bmrFormula?: 'mifflin' | 'katch';
 
+  /** level = fator de atividade fixo; tracked = base do dia a dia + treinos registrados. */
+  @IsOptional() @IsIn(['level', 'tracked'])
+  activityMode?: 'level' | 'tracked';
+
   /** Atalho de onboarding: registra uma pesagem em `weightDate` (padrão: hoje). */
   @IsOptional() @IsNumber() @Min(20) @Max(400) @Type(() => Number)
   currentWeightKg?: number;

@@ -258,4 +258,106 @@ describe('PersoNutri API (e2e)', () => {
       await http().get('/api/diary/2026-13-45').expect(400);
     });
   });
+
+  describe('exercícios e atividades', () => {
+    let walkId: number;
+    let liftId: number;
+    let customId: number;
+    let workoutId: number;
+
+    it('traz o catálogo embutido e busca sem acento', async () => {
+      const all = (await http().get('/api/activities')).body;
+      expect(all.length).toBeGreaterThan(40);
+      const walk = all.find((a: any) => a.name === 'Caminhada');
+      expect(walk).toMatchObject({ calcMode: 'walk', builtin: true });
+      walkId = walk.id;
+      const found = (await http().get('/api/activities').query({ q: 'musculacao intensa' })).body;
+      expect(found).toHaveLength(1);
+      liftId = found[0].id;
+      expect(found[0].met).toBe(6);
+    });
+
+    it('estima calorias: caminhar 5 km/h por 60 min com o peso registrado', async () => {
+      const r = (await http().post('/api/activities/estimate').send({ activityId: walkId, durationMin: 60, speedKmh: 5, weightKg: 80 }).expect(201)).body;
+      expect(r).toMatchObject({ met: 3.4, grossKcal: 270, netKcal: 190 });
+      const byDistance = (await http().post('/api/activities/estimate').send({ activityId: walkId, durationMin: 30, distanceKm: 2.5, weightKg: 80 })).body;
+      expect(byDistance.speedKmh).toBe(5);
+      // sem peso informado usa o último peso registrado (81,4 kg)
+      const usesProfile = (await http().post('/api/activities/estimate').send({ activityId: liftId, durationMin: 60 })).body;
+      expect(usesProfile.weightKg).toBe(81.4);
+    });
+
+    it('cadastra, edita e remove atividade própria; catálogo é protegido', async () => {
+      const c = (await http().post('/api/activities').send({ name: 'Futevôlei', category: 'Esportes', met: 8 }).expect(201)).body;
+      customId = c.id;
+      expect(c).toMatchObject({ builtin: false, calcMode: 'met', met: 8 });
+      await http().patch(`/api/activities/${customId}`).send({ met: 8.5 }).expect(200);
+      await http().patch(`/api/activities/${walkId}`).send({ met: 2 }).expect(400);
+      await http().delete(`/api/activities/${walkId}`).expect(400);
+      await http().post('/api/activities').send({ name: 'Ruim', category: 'x', met: 0.2 }).expect(400);
+    });
+
+    it('registra treino e calcula as calorias pelo peso do dia', async () => {
+      const r = await http().post('/api/workouts').send({ date: today, time: '18:00', activityId: liftId, durationMin: 60 }).expect(201);
+      workoutId = r.body.id;
+      expect(r.body).toMatchObject({ met: 6, kcalSource: 'calculated' });
+      expect(r.body.netKcal).toBe(Math.round(5 * 81.4));
+      expect(r.body.grossKcal).toBe(Math.round(6 * 81.4));
+    });
+
+    it('exige velocidade/distância nas atividades por velocidade, salvo calorias do relógio', async () => {
+      await http().post('/api/workouts').send({ date: today, activityId: walkId, durationMin: 30 }).expect(400);
+      const ok = await http().post('/api/workouts').send({ date: today, activityId: walkId, durationMin: 30, deviceActiveKcal: 120 }).expect(201);
+      expect(ok.body).toMatchObject({ kcalSource: 'device', netKcal: 120 });
+      await http().delete(`/api/workouts/${ok.body.id}`).expect(204);
+      await http().post('/api/workouts').send({ date: '2999-01-01', activityId: liftId, durationMin: 30 }).expect(400);
+    });
+
+    it('lista o dia com totais', async () => {
+      const d = (await http().get('/api/workouts').query({ date: today })).body;
+      expect(d.workouts).toHaveLength(1);
+      expect(d.totals).toMatchObject({ sessions: 1, minutes: 60, netKcal: Math.round(5 * 81.4) });
+    });
+
+    it('modo level não soma o treino ao gasto; modo tracked soma', async () => {
+      let d = (await http().get('/api/dashboard')).body;
+      expect(d.exercise).toMatchObject({ sessions: 1, counted: false });
+      const levelTdee = d.energy.tdee;
+      expect(d.energy.exerciseKcal).toBe(0);
+
+      await http()
+        .put('/api/body/profile')
+        .send({ sex: 'male', birthDate: '1990-01-10', heightCm: 180, activityLevel: 'sedentary', activityMode: 'tracked' })
+        .expect(200);
+      d = (await http().get('/api/dashboard')).body;
+      expect(d.exercise.counted).toBe(true);
+      expect(d.energy.exerciseKcal).toBe(Math.round(5 * 81.4));
+      expect(d.energy.tdee).toBe(d.energy.baseTdee + d.energy.exerciseKcal);
+      expect(d.energy.baseTdee).toBeLessThan(levelTdee); // base sedentária < moderada
+      // a meta acompanha o gasto do dia
+      expect(d.targets.kcal).toBe(Math.round(d.energy.tdee - 550));
+    });
+
+    it('importação em lote é idempotente', async () => {
+      const item = { externalId: 'hc-123', date: today, time: '07:00', activityId: walkId, durationMin: 45, distanceKm: 4, deviceActiveKcal: 210, avgHeartRate: 120 };
+      const first = (await http().post('/api/workouts/import').send({ items: [item] }).expect(200)).body;
+      expect(first).toEqual({ created: 1, updated: 0, errors: [] });
+      const again = (await http().post('/api/workouts/import').send({ items: [{ ...item, deviceActiveKcal: 230 }, { ...item, externalId: 'hc-bad', activityId: 999999 }] })).body;
+      expect(again.created).toBe(0);
+      expect(again.updated).toBe(1);
+      expect(again.errors).toHaveLength(1);
+      const day = (await http().get('/api/workouts').query({ date: today })).body;
+      expect(day.workouts.filter((w: any) => w.source === 'device')).toHaveLength(1);
+      expect(day.workouts.find((w: any) => w.source === 'device').netKcal).toBe(230);
+    });
+
+    it('não remove atividade com treinos; remove depois de apagar o treino', async () => {
+      await http().delete(`/api/activities/${liftId}`).expect(400); // embutida
+      const w = (await http().post('/api/workouts').send({ date: today, activityId: customId, durationMin: 40 }).expect(201)).body;
+      await http().delete(`/api/activities/${customId}`).expect(400);
+      await http().delete(`/api/workouts/${w.id}`).expect(204);
+      await http().delete(`/api/activities/${customId}`).expect(204);
+      await http().delete(`/api/workouts/${workoutId}`).expect(204);
+    });
+  });
 });

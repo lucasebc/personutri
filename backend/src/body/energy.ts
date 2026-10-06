@@ -3,6 +3,8 @@ import { KCAL_PER_G } from '../common/nutrients';
 export type Sex = 'male' | 'female';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high' | 'athlete';
 export type BmrFormula = 'mifflin' | 'katch';
+/** level: gasto = basal × fator de atividade. tracked: basal × fator do dia a dia + exercícios registrados. */
+export type ActivityMode = 'level' | 'tracked';
 
 export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
   sedentary: 1.2, // pouco ou nenhum exercício

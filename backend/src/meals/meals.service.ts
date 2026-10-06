@@ -1,11 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { totalOf, viewItem } from '../common/item-view';
-import { roundNutrition } from '../common/nutrients';
 import { DietEntry } from '../diets/diet.entity';
 import { FoodsService } from '../foods/foods.service';
 import { Meal, MealItem } from './meal.entity';
+import { mealView } from './meal-view';
 import { MealDto } from './meals.dto';
 
 @Injectable()
@@ -18,13 +17,7 @@ export class MealsService {
   ) {}
 
   view(meal: Meal) {
-    return {
-      id: meal.id,
-      name: meal.name,
-      notes: meal.notes,
-      items: meal.items.map(viewItem),
-      totals: roundNutrition(totalOf(meal.items)),
-    };
+    return mealView(meal);
   }
 
   async list() {

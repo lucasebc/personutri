@@ -9,6 +9,8 @@ import { Diet, DietEntry } from './diets/diet.entity';
 import { DietsModule } from './diets/diets.module';
 import { DiaryEntry, DiaryItem } from './diary/diary.entity';
 import { DiaryModule } from './diary/diary.module';
+import { Activity, Workout } from './exercise/exercise.entity';
+import { ExerciseModule } from './exercise/exercise.module';
 import { Food } from './foods/food.entity';
 import { FoodsModule } from './foods/foods.module';
 import { ForecastModule } from './forecast/forecast.module';
@@ -23,7 +25,7 @@ if (DATABASE_PATH !== ':memory:') mkdirSync(dirname(DATABASE_PATH), { recursive:
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
       database: DATABASE_PATH,
-      entities: [Food, Meal, MealItem, Diet, DietEntry, DiaryEntry, DiaryItem, BodyProfile, WeightEntry],
+      entities: [Food, Meal, MealItem, Diet, DietEntry, DiaryEntry, DiaryItem, BodyProfile, WeightEntry, Activity, Workout],
       // App pessoal de usuário único: o esquema é sincronizado automaticamente.
       synchronize: true,
       foreignKeys: true,
@@ -33,6 +35,7 @@ if (DATABASE_PATH !== ':memory:') mkdirSync(dirname(DATABASE_PATH), { recursive:
     DietsModule,
     DiaryModule,
     BodyModule,
+    ExerciseModule,
     DashboardModule,
     ForecastModule,
   ],

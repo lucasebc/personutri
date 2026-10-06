@@ -106,6 +106,11 @@ export default function DashboardPage() {
                     <div key={k as string}>
                       <dt className="text-xs text-muted">{k}</dt>
                       <dd className="font-semibold">{fmt(v as number)} kcal</dd>
+                      {k === 'Gasto estimado (TDEE)' && d.energy!.exerciseKcal > 0 && (
+                        <dd className="text-[11px] font-normal text-muted">
+                          base {fmt(d.energy!.baseTdee)} + treino {fmt(d.energy!.exerciseKcal)}
+                        </dd>
+                      )}
                     </div>
                   ))}
                 </dl>
@@ -187,6 +192,55 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+          </Card>
+
+          <Card
+            title="Exercício do dia"
+            action={
+              <Link href={`/exercicios?date=${date}`} className="btn btn-sm">
+                {d.exercise.sessions ? 'Ver treinos' : 'Registrar treino'}
+              </Link>
+            }
+          >
+            {d.exercise.sessions === 0 ? (
+              <p className="text-sm text-muted">Nenhum treino registrado neste dia.</p>
+            ) : (
+              <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
+                <dl className="num grid grid-cols-3 gap-6 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted">Treinos</dt>
+                    <dd className="text-lg font-semibold">{d.exercise.sessions}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Tempo</dt>
+                    <dd className="text-lg font-semibold">{fmt(d.exercise.minutes)} min</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Calorias ativas</dt>
+                    <dd className="text-lg font-semibold">{fmt(d.exercise.netKcal)} kcal</dd>
+                  </div>
+                </dl>
+                <ul className="num min-w-[14rem] flex-1 divide-y divide-line text-sm">
+                  {d.exercise.items.map((w) => (
+                    <li key={w.id} className="flex justify-between gap-3 py-1.5">
+                      <span className="truncate">
+                        {w.time && <span className="mr-2 text-muted">{w.time}</span>}
+                        {w.name}
+                      </span>
+                      <span className="shrink-0 text-muted">
+                        {fmt(w.durationMin)} min · {w.netKcal === null ? 'sem cálculo' : `${fmt(w.netKcal)} kcal`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="mt-3 text-xs text-muted">
+              {d.exercise.counted
+                ? 'As calorias ativas dos treinos estão somadas ao gasto do dia.'
+                : 'Seu perfil usa fator de atividade fixo: os treinos são informativos e não alteram o gasto. Em Corpo, escolha “Base do dia a dia + treinos” para somá-los.'}
+              {d.exercise.incomplete && ' Algum treino ficou sem cálculo (falta peso, velocidade ou distância).'}
+            </p>
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-5">

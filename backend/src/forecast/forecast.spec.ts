@@ -14,6 +14,7 @@ const profile: BodyProfile = {
   proteinPerKg: 1.8,
   fatPercent: 25,
   bmrFormula: 'mifflin',
+  activityMode: 'level',
 };
 
 const w = (date: string, weightKg: number): WeightEntry => ({ id: 0, date, weightKg, bodyFatPct: null, waistCm: null });
@@ -126,5 +127,39 @@ describe('computeForecast', () => {
     expect(cur.partial).toBe(true);
     expect(cur.loggedDays).toBe(2);
     expect(cur.predicted).toBeCloseTo(80, 2);
+  });
+
+  it('modo tracked: o treino registrado entra no gasto e muda a previsão', () => {
+    const tracked = { ...profile, activityMode: 'tracked' as const };
+    const weights = [w(W1, 80), w(W2, 80)];
+    const base = energyOn(W2, tracked, weights, 80)!.baseTdee;
+    const days = dateRange(W2, addDays(W2, 6));
+    const exercise = new Map(days.map((d) => [d, 300]));
+
+    // come o gasto base + 300 e treina 300 kcal líquidas por dia: peso estável
+    const balanced = computeForecast({ today: addDays(W2, 6), profile: tracked, weights, consumedKcal: new Map(days.map((d) => [d, base + 300])), exerciseKcal: exercise });
+    if (!balanced.ready) throw new Error('not ready');
+    expect(balanced.weeks[1].predicted).toBeCloseTo(80, 2);
+    expect(balanced.weeks[1].tdee).toBe(Math.round(base + 300));
+
+    // sem registrar o treino, a mesma ingestão aparece como superávit de 300 kcal/dia
+    const ignored = computeForecast({ today: addDays(W2, 6), profile: tracked, weights, consumedKcal: new Map(days.map((d) => [d, base + 300])) });
+    if (!ignored.ready) throw new Error('not ready');
+    expect(ignored.weeks[1].predicted).toBeCloseTo(80 + (7 * 300) / 7700, 2);
+  });
+
+  it('modo level: o treino registrado não é somado (já está no fator de atividade)', () => {
+    const weights = [w(W1, 80), w(W2, 80)];
+    const days = dateRange(W2, addDays(W2, 6));
+    const tdee = energyOn(W2, profile, weights, 80)!.tdee;
+    const r = computeForecast({
+      today: addDays(W2, 6),
+      profile,
+      weights,
+      consumedKcal: new Map(days.map((d) => [d, tdee])),
+      exerciseKcal: new Map(days.map((d) => [d, 500])),
+    });
+    if (!r.ready) throw new Error('not ready');
+    expect(r.weeks[1].predicted).toBeCloseTo(80, 2);
   });
 });

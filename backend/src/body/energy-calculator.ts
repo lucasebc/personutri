@@ -1,5 +1,5 @@
 import { ageOn } from '../common/dates';
-import { BodyProfile, WeightEntry } from './body.entity';
+import { BodyProfileData as BodyProfile, WeightEntryData as WeightEntry } from './body.types';
 import { bmr, macroTargets, targetKcal, tdee } from './energy';
 
 export interface EnergyOn {
@@ -8,7 +8,12 @@ export interface EnergyOn {
   bodyFatPct: number | null;
   age: number;
   bmr: number;
+  /** Gasto total do dia: base + exercícios (quando o modo é `tracked`). */
   tdee: number;
+  /** Gasto sem os treinos registrados. */
+  baseTdee: number;
+  /** Calorias líquidas de treino somadas ao gasto (0 no modo `level`). */
+  exerciseKcal: number;
   targetKcal: number;
   macros: { protein: number; carbs: number; fat: number };
 }
@@ -31,6 +36,8 @@ export function energyOn(
   profile: BodyProfile,
   weights: WeightEntry[],
   overrideWeightKg?: number,
+  /** Calorias líquidas (acima do repouso) dos treinos do dia; só contam no modo `tracked`. */
+  exerciseKcal = 0,
 ): EnergyOn | null {
   const w = weightOn(date, weights);
   const weightKg = overrideWeightKg ?? w?.weightKg;
@@ -45,7 +52,9 @@ export function energyOn(
     bodyFatPct,
     formula: profile.bmrFormula,
   });
-  const total = tdee(basal, profile.activityLevel);
+  const base = tdee(basal, profile.activityLevel);
+  const applied = profile.activityMode === 'tracked' ? Math.max(0, exerciseKcal) : 0;
+  const total = base + applied;
   const target = targetKcal(total, profile.weeklyGoalKg);
   return {
     date,
@@ -54,6 +63,8 @@ export function energyOn(
     age,
     bmr: basal,
     tdee: total,
+    baseTdee: base,
+    exerciseKcal: applied,
     targetKcal: target,
     macros: macroTargets({ kcal: target, weightKg, proteinPerKg: profile.proteinPerKg, fatPercent: profile.fatPercent }),
   };

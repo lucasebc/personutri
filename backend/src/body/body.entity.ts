@@ -1,9 +1,10 @@
 import { Column, Entity, Index, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
-import { ActivityLevel, BmrFormula, Sex } from './energy';
+import { BodyProfileData, WeightEntryData } from './body.types';
+import { ActivityLevel, ActivityMode, BmrFormula, Sex } from './energy';
 
 /** Perfil corporal do usuário (app de usuário único: sempre id = 1). */
 @Entity('body_profile')
-export class BodyProfile {
+export class BodyProfile implements BodyProfileData {
   @PrimaryColumn({ type: 'integer' })
   id: number;
 
@@ -35,10 +36,13 @@ export class BodyProfile {
 
   @Column({ type: 'varchar', default: 'mifflin' })
   bmrFormula: BmrFormula;
+
+  @Column({ type: 'varchar', default: 'level' })
+  activityMode: ActivityMode;
 }
 
 @Entity('weight_entries')
-export class WeightEntry {
+export class WeightEntry implements WeightEntryData {
   @PrimaryGeneratedColumn()
   id: number;
 

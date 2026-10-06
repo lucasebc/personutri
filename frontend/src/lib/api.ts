@@ -131,6 +131,8 @@ export interface DiaryEntry {
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high' | 'athlete';
 
+export type ActivityMode = 'level' | 'tracked';
+
 export interface BodyProfile {
   sex: 'male' | 'female';
   birthDate: string;
@@ -141,6 +143,7 @@ export interface BodyProfile {
   proteinPerKg: number;
   fatPercent: number;
   bmrFormula: 'mifflin' | 'katch';
+  activityMode: ActivityMode;
 }
 
 export interface WeightEntry {
@@ -161,6 +164,8 @@ export interface BodySummary {
     age: number;
     bmr: number;
     tdee: number;
+    baseTdee: number;
+    exerciseKcal: number;
     targetKcal: number;
     macros: { protein: number; carbs: number; fat: number };
   } | null;
@@ -177,7 +182,16 @@ export interface Dashboard {
   date: string;
   hasProfile: boolean;
   hasWeight: boolean;
-  energy: { weightKg: number; bmr: number; tdee: number; targetKcal: number } | null;
+  energy: { weightKg: number; bmr: number; tdee: number; baseTdee: number; exerciseKcal: number; targetKcal: number } | null;
+  exercise: {
+    sessions: number;
+    minutes: number;
+    netKcal: number;
+    grossKcal: number;
+    incomplete: boolean;
+    counted: boolean;
+    items: { id: number; name: string; time: string | null; durationMin: number; netKcal: number | null }[];
+  };
   targets: { kcal: number; protein: number; carbs: number; fat: number } | null;
   consumed: Nutrition;
   pending: Nutrition;
@@ -226,3 +240,47 @@ export type Forecast =
         weeklyGoalKg: number;
       };
     };
+
+export type CalcMode = 'met' | 'walk' | 'run' | 'cycle';
+
+export interface Activity {
+  id: number;
+  name: string;
+  category: string;
+  calcMode: CalcMode;
+  met: number | null;
+  builtin: boolean;
+}
+
+export interface Workout {
+  id: number;
+  date: string;
+  time: string | null;
+  activity: { id: number; name: string; category: string; calcMode: CalcMode; met: number | null };
+  durationMin: number;
+  distanceKm: number | null;
+  speedKmh: number | null;
+  gradePercent: number | null;
+  avgHeartRate: number | null;
+  deviceActiveKcal: number | null;
+  notes: string | null;
+  source: 'manual' | 'device';
+  met: number | null;
+  grossKcal: number | null;
+  netKcal: number | null;
+  kcalSource: 'device' | 'calculated' | null;
+}
+
+export interface WorkoutDay {
+  date: string;
+  workouts: Workout[];
+  totals: { sessions: number; minutes: number; netKcal: number; grossKcal: number; incomplete: boolean };
+}
+
+export interface CalorieEstimate {
+  weightKg: number | null;
+  met: number | null;
+  speedKmh: number | null;
+  grossKcal: number | null;
+  netKcal: number | null;
+}

@@ -20,9 +20,18 @@ mas é colaborativa — a qualidade varia e micronutrientes costumam faltar. A T
 de alimentos no Brasil, com minerais e vitaminas, mas não tem marcas. Nutrientes que uma base não informa aparecem como
 "sem dados" no dashboard (nunca como zero).
 
-> Limites do Open Food Facts: ~10 buscas/min e ~100 consultas de produto/min por IP. O backend guarda respostas em
+> Limites do Open Food Facts (por IP): 10 buscas/min e 15 consultas de produto/min. O backend guarda respostas em
 > cache por 10 min e, se a API estiver fora do ar, a busca local continua funcionando e a tela mostra um aviso.
-> Defina `OFF_USER_AGENT` com um contato seu (a API pede identificação do app).
+
+### Cadastro, chave ou token?
+
+Nenhuma integração atual exige conta, chave ou token:
+
+- **Open Food Facts**: leitura é aberta, sem chave nem cadastro. Só exige um `User-Agent` que identifique o app
+  (`OFF_USER_AGENT`, ex.: `PersoNutri/0.1 (seu@email.com)`). Conta só é necessária para *escrever* dados na base deles,
+  o que este app não faz. Os dados são ODbL: dê atribuição ao Open Food Facts e, se redistribuir uma base derivada, use a
+  mesma licença.
+- **TACO**: não é uma API; os dados estão embutidos no projeto (cite NEPA/UNICAMP).
 
 ## Rodando
 
@@ -44,7 +53,7 @@ npm run seed:demo
 Configuração: `backend/.env.example` (variáveis de ambiente da API) e `frontend/.env.example`
 (`NEXT_PUBLIC_API_URL`, padrão `http://localhost:3001/api`). O banco fica em `backend/data/personutri.sqlite`.
 
-Testes: `npm test` (28 unitários + 23 e2e HTTP contra SQLite em memória, com o Open Food Facts simulado).
+Testes: `npm test` (42 unitários + 32 e2e HTTP contra SQLite em memória, com o Open Food Facts simulado).
 
 ## Como funciona
 
@@ -52,6 +61,17 @@ Testes: `npm test` (28 unitários + 23 e2e HTTP contra SQLite em memória, com o
 uma refeição a um horário e dias da semana; só uma dieta fica ativa. **Agenda/diário**: ao abrir um dia, as refeições
 da dieta ativa viram registros *pendentes* que você marca como **feitas** ou **puladas** (e pode ajustar as
 quantidades do que realmente comeu); também dá para registrar **consumo livre**. Só o que está *feito* conta nos totais.
+
+**Exercícios** (tela Exercícios): catálogo com ~50 atividades (valores de MET do Compendium of Physical Activities) e
+cadastro de atividades próprias. Calorias de um treino = MET × peso × horas (bruto) e (MET − 1) × peso × horas (ativo,
+acima do repouso). Caminhada e corrida usam as equações metabólicas do ACSM (velocidade e inclinação) e ciclismo uma
+tabela por velocidade, então "caminhar a 5,5 km/h por 45 min" dá uma estimativa própria para o seu peso. Se um
+relógio informar as calorias ativas, esse valor substitui o cálculo.
+
+**Gasto diário e treinos**: o fator de atividade (1,2–1,9) já embute um treino médio, então somar treinos por cima
+contaria duas vezes. Por isso o perfil tem dois modos: *fator fixo* (treinos só informativos) e *base do dia a dia +
+treinos registrados* (recomendado: gasto = basal × fator sem treino + calorias ativas dos treinos do dia; a meta
+acompanha). A previsão de peso usa a média diária de treino de cada semana.
 
 **Metas e balanço** (tela Corpo → perfil e pesagens):
 - Metabolismo basal: Mifflin-St Jeor (ou Katch-McArdle, se você informar % de gordura e escolher essa fórmula).
@@ -81,6 +101,18 @@ backend/src
   dashboard/  totais do dia    forecast/  previsão semanal de peso
 frontend/src/app   dashboard, agenda, refeicoes, dietas, alimentos, corpo
 ```
+
+## Conectando o Galaxy Watch 5
+
+- **Google Fit não serve**: a API REST do Google Fit não aceita novos desenvolvedores desde maio de 2024 e vai até o
+  fim de 2026, sem substituta equivalente
+  ([FAQ do Android](https://developer.android.com/health-and-fitness/guides/health-connect/migrate/migration-faq)).
+- **Caminho viável**: o relógio sincroniza com o Samsung Health, que grava no **Health Connect** (API só *no aparelho*
+  Android, sem REST). Para chegar a este servidor é preciso um app no celular que leia o Health Connect e envie os
+  treinos — ou exportar manualmente o CSV do Samsung Health.
+- **Pronto para isso**: `POST /api/workouts/import` recebe uma lista de treinos (`externalId`, `activityId`, data,
+  duração, `deviceActiveKcal`, `avgHeartRate`, distância…) e é idempotente (reenviar atualiza, não duplica). Falta só o
+  app/conversor que leia o Health Connect e faça esse POST.
 
 ## Limitações conhecidas
 

@@ -73,12 +73,16 @@ await call('PUT', '/body/profile', {
   sex: 'male',
   birthDate: '1992-04-18',
   heightCm: 178,
-  activityLevel: 'moderate',
+  activityLevel: 'light', // dia a dia; os treinos entram à parte (modo "tracked")
+  activityMode: 'tracked',
   weeklyGoalKg: -0.5,
   targetWeightKg: 76,
   currentWeightKg: 84.2,
   weightDate: dayStr(-35),
 });
+
+const [lift] = await call('GET', `/activities?q=${encodeURIComponent('musculacao intensa')}`);
+const [walk] = await call('GET', '/activities?q=caminhada').then((l) => l.filter((a) => a.name === 'Caminhada'));
 
 // ~5 semanas de histórico determinístico: a maioria dos dias segue o plano, alguns pulam o lanche
 // e há consumos livres. As pesagens oscilam em torno de uma perda de ~0,4 kg/semana.
@@ -92,6 +96,10 @@ for (let off = -35; off <= 0; off++) {
     if (pending) continue;
     await call('PATCH', `/diary/entries/${e.id}`, { status: skipSnack ? 'skipped' : 'done' });
   }
+  // Treinos: musculação seg/qua/sex, caminhada ter/sáb
+  const wd = new Date(`${date}T12:00:00`).getDay();
+  if ([1, 3, 5].includes(wd)) await call('POST', '/workouts', { date, time: '18:00', activityId: lift.id, durationMin: 60, avgHeartRate: 128 });
+  if ([2, 6].includes(wd)) await call('POST', '/workouts', { date, time: '07:00', activityId: walk.id, durationMin: 45, distanceKm: 4.1 });
   if (off % 3 === 0 && off < 0) {
     await call('POST', `/diary/${date}/free`, { label: 'Beliscos', time: '22:00', items: [{ foodId: snack.id, grams: 100 }] });
   }

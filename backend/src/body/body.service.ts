@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { isValidDate, todayInTz } from '../common/dates';
 import { BodyProfile, WeightEntry } from './body.entity';
 import { ProfileDto, WeightDto } from './body.dto';
-import { ACTIVITY_FACTORS } from './energy';
+import { computeBodySummary } from './body-summary';
 import { EnergyOn, energyOn } from './energy-calculator';
 
 @Injectable()
@@ -33,6 +33,7 @@ export class BodyService {
       proteinPerKg: dto.proteinPerKg ?? existing?.proteinPerKg ?? 1.8,
       fatPercent: dto.fatPercent ?? existing?.fatPercent ?? 25,
       bmrFormula: dto.bmrFormula ?? existing?.bmrFormula ?? 'mifflin',
+      activityMode: dto.activityMode ?? existing?.activityMode ?? 'level',
     });
     const saved = await this.profiles.save(profile);
     if (dto.currentWeightKg !== undefined) {
@@ -79,26 +80,6 @@ export class BodyService {
   /** Resumo para a tela "Corpo": perfil, metas de hoje e fatores de atividade. */
   async summary(date = todayInTz()) {
     const ctx = await this.energyContext();
-    const energy = ctx.on(date);
-    const latest = ctx.weights[ctx.weights.length - 1] ?? null;
-    const bmi = latest && ctx.profile ? latest.weightKg / (ctx.profile.heightCm / 100) ** 2 : null;
-    return {
-      profile: ctx.profile,
-      weights: ctx.weights,
-      latestWeight: latest,
-      bmi: bmi === null ? null : Math.round(bmi * 10) / 10,
-      energy: energy && {
-        ...energy,
-        bmr: Math.round(energy.bmr),
-        tdee: Math.round(energy.tdee),
-        targetKcal: Math.round(energy.targetKcal),
-        macros: {
-          protein: Math.round(energy.macros.protein),
-          carbs: Math.round(energy.macros.carbs),
-          fat: Math.round(energy.macros.fat),
-        },
-      },
-      activityFactors: ACTIVITY_FACTORS,
-    };
+    return computeBodySummary(ctx.profile, ctx.weights, date);
   }
 }

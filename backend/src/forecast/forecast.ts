@@ -1,5 +1,5 @@
 import { addDays, dateRange, startOfWeek } from '../common/dates';
-import { BodyProfile, WeightEntry } from '../body/body.entity';
+import { BodyProfileData as BodyProfile, WeightEntryData as WeightEntry } from '../body/body.types';
 import { KCAL_PER_KG } from '../body/energy';
 import { energyOn } from '../body/energy-calculator';
 
@@ -9,6 +9,8 @@ export interface ForecastInput {
   weights: WeightEntry[];
   /** kcal consumidas (apenas registros "feitos") por data. Datas sem registro ficam de fora. */
   consumedKcal: Map<string, number>;
+  /** Calorias líquidas de treino por data. Só entram no gasto quando o perfil está no modo `tracked`. */
+  exerciseKcal?: Map<string, number>;
   weeksBack?: number;
   weeksAhead?: number;
 }
@@ -71,6 +73,7 @@ function clampToTarget(weight: number, profile: BodyProfile): number {
 
 export function computeForecast(input: ForecastInput): ForecastResult {
   const { today, profile, weights, consumedKcal } = input;
+  const exerciseKcal = input.exerciseKcal ?? new Map<string, number>();
   const weeksBack = input.weeksBack ?? 12;
   const weeksAhead = input.weeksAhead ?? 4;
   if (!weights.length) return { ready: false, reason: 'no-weights' };
@@ -114,7 +117,9 @@ export function computeForecast(input: ForecastInput): ForecastResult {
     let tdee: number | null = null;
     let intakeSource: ForecastWeek['intakeSource'] = logged.length ? 'logged' : 'plan';
     if (anchor !== null) {
-      const energy = energyOn(ws, profile, weights, anchor);
+      // Treino médio diário da semana (dias encerrados) entra no gasto no modo `tracked`.
+      const exerciseAvg = days.length ? mean(days.map((d) => exerciseKcal.get(d) ?? 0)) : 0;
+      const energy = energyOn(ws, profile, weights, anchor, exerciseAvg);
       if (energy) {
         tdee = energy.tdee;
         avgIntake = logged.length ? mean(logged) : energy.targetKcal;
@@ -153,10 +158,12 @@ export function computeForecast(input: ForecastInput): ForecastResult {
   const recentLogged = dateRange(addDays(today, -14), addDays(today, -1))
     .map((d) => consumedKcal.get(d) ?? 0)
     .filter((k) => k > 0);
+  const recentDays = dateRange(addDays(today, -14), addDays(today, -1));
+  const recentExercise = mean(recentDays.map((d) => exerciseKcal.get(d) ?? 0));
   const projection: ForecastProjection[] = [];
   for (let k = 1; k <= weeksAhead; k++) {
     const ws = addDays(currentWeek, 7 * k);
-    const energy = energyOn(ws, profile, weights, projWeight);
+    const energy = energyOn(ws, profile, weights, projWeight, recentExercise);
     if (!energy) break;
     const intake = recentLogged.length >= 3 ? mean(recentLogged) : energy.targetKcal;
     projWeight += (7 * (intake - energy.tdee)) / KCAL_PER_KG;

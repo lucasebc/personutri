@@ -14,7 +14,7 @@ export class OffUnavailableError extends Error {}
  * Cliente da API pública do Open Food Facts (https://world.openfoodfacts.org).
  * - Busca por texto restrita a produtos vendidos no Brasil (`countries=brazil`).
  * - Busca por código de barras (EAN/GTIN) via API v2.
- * Limites do serviço: ~10 buscas/min e ~100 consultas de produto/min por IP, por isso
+ * Limites do serviço (por IP): 10 buscas/min e 15 consultas de produto/min, por isso
  * as respostas ficam em cache em memória por 10 minutos.
  */
 @Injectable()

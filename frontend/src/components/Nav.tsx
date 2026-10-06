@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/agenda', label: 'Agenda', icon: '🗓️' },
   { href: '/refeicoes', label: 'Refeições', icon: '🍽️' },
   { href: '/dietas', label: 'Dietas', icon: '📋' },
+  { href: '/exercicios', label: 'Exercícios', icon: '🏃' },
   { href: '/alimentos', label: 'Alimentos', icon: '🥑' },
   { href: '/corpo', label: 'Corpo', icon: '⚖️' },
 ];
@@ -36,13 +37,13 @@ export function Nav() {
           </nav>
         </div>
       </header>
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-surface md:hidden" aria-label="Principal">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 border-t border-line bg-surface md:hidden" aria-label="Principal">
         {LINKS.map((l) => (
           <Link
             key={l.href}
             href={l.href}
             aria-current={active(l.href) ? 'page' : undefined}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${active(l.href) ? 'text-accent' : 'text-muted'}`}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[9px] font-medium ${active(l.href) ? 'text-accent' : 'text-muted'}`}
           >
             <span className="text-lg leading-none" aria-hidden>
               {l.icon}

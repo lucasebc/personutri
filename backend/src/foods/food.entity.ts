@@ -1,7 +1,8 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import { Micros, Nutrition } from '../common/nutrients';
+import { FoodSource } from '../common/food-like';
+import { Micros } from '../common/nutrients';
 
-export type FoodSource = 'taco' | 'off' | 'custom';
+export { FoodSource, foodNutrition, normalizeSearch } from '../common/food-like';
 
 /** Alimento ou produto. Todos os valores nutricionais são por 100 g. */
 @Entity('foods')
@@ -62,23 +63,4 @@ export class Food {
 
   @CreateDateColumn()
   createdAt: Date;
-}
-
-export function foodNutrition(food: Pick<Food, 'kcal' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'micros'>): Nutrition {
-  return {
-    kcal: food.kcal,
-    protein: food.protein,
-    carbs: food.carbs,
-    fat: food.fat,
-    fiber: food.fiber ?? 0,
-    micros: food.micros ?? {},
-  };
-}
-
-export function normalizeSearch(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .trim();
 }
