@@ -3,14 +3,16 @@
  * Popula a API com dados de demonstração: refeições, uma dieta ativa, perfil corporal,
  * ~5 semanas de pesagens e de diário. Usa só a API HTTP (o backend precisa estar rodando).
  *
- *   node scripts/seed-demo.mjs [http://localhost:3001/api]
+ *   SEED_TOKEN=<token> node scripts/seed-demo.mjs [http://localhost:3001/api]
  */
 const API = process.argv[2] || process.env.API_URL || 'http://localhost:3001/api';
+// Token da API (se ela exigir): SEED_TOKEN=... node scripts/seed-demo.mjs
+const TOKEN = process.env.SEED_TOKEN || process.env.API_TOKEN || '';
 
 async function call(method, path, body) {
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${await res.text()}`);

@@ -40,6 +40,30 @@ const MAP: Record<string, string> = {
   MARTIAL_ARTS: 'Jiu-jitsu / judô / karatê / muay thai',
   SKATING: 'Patins',
   EXERCISE_CLASS: 'Ginástica aeróbica (baixo impacto)',
+  JUMP_ROPE: 'Pular corda',
+  // Exercícios de musculação registrados individualmente
+  BENCH_PRESS: 'Musculação (leve a moderada)',
+  DEADLIFT: 'Musculação (leve a moderada)',
+  SQUAT: 'Musculação (leve a moderada)',
+  LUNGE: 'Musculação (leve a moderada)',
+  LAT_PULL_DOWN: 'Musculação (leve a moderada)',
+  BARBELL_SHOULDER_PRESS: 'Musculação (leve a moderada)',
+  BACK_EXTENSION: 'Musculação (leve a moderada)',
+  DUMBBELL_CURL_LEFT_ARM: 'Musculação (leve a moderada)',
+  DUMBBELL_CURL_RIGHT_ARM: 'Musculação (leve a moderada)',
+  DUMBBELL_FRONT_RAISE: 'Musculação (leve a moderada)',
+  DUMBBELL_LATERAL_RAISE: 'Musculação (leve a moderada)',
+  DUMBBELL_TRICEPS_EXTENSION_LEFT_ARM: 'Musculação (leve a moderada)',
+  DUMBBELL_TRICEPS_EXTENSION_RIGHT_ARM: 'Musculação (leve a moderada)',
+  DUMBBELL_TRICEPS_EXTENSION_TWO_ARM: 'Musculação (leve a moderada)',
+  // Calistenia
+  BURPEE: 'Calistenia (intensa)',
+  CRUNCH: 'Calistenia (leve a moderada)',
+  PLANK: 'Calistenia (leve a moderada)',
+  JUMPING_JACK: 'Calistenia (leve a moderada)',
+  BENCH_SIT_UP: 'Calistenia (leve a moderada)',
+  FORWARD_TWIST: 'Calistenia (leve a moderada)',
+  UPPER_TWIST: 'Calistenia (leve a moderada)',
 };
 
 /** Aceita "RUNNING", "running" ou "EXERCISE_TYPE_RUNNING". */

@@ -9,6 +9,13 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "test": "npm --prefix backend test && npm --prefix backend run test:e2e",
-    "seed:demo": "npm --prefix backend run seed:demo"
-  }
+    "seed:demo": "npm --prefix backend run seed:demo",
+    "app:start": "npm --workspace @personutri/app run start",
+    "app:typecheck": "npm --workspace @personutri/app run typecheck && npm --workspace @personutri/shared run typecheck",
+    "app:test": "npm --workspace @personutri/shared test && npm --workspace @personutri/app test"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }

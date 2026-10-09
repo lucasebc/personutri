@@ -8,3 +8,9 @@ backend/data/
 coverage/
 *.tsbuildinfo
 next-env.d.ts
+apps/app/android/
+apps/app/ios/
+apps/app/dist/
+apps/app/dist-android/
+apps/app/.expo/
+apps/app/expo-env.d.ts
