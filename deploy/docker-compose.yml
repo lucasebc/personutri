@@ -1,0 +1,35 @@
+# Uso (na pasta deploy/):  cp .env.example .env  &&  editar .env  &&  docker compose up -d --build
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      API_TOKENS: ${API_TOKENS:?defina API_TOKENS no arquivo .env (openssl rand -hex 24)}
+      OFF_USER_AGENT: ${OFF_USER_AGENT:-PersoNutri/0.1}
+      APP_TIMEZONE: ${APP_TIMEZONE:-America/Sao_Paulo}
+      FRONTEND_ORIGIN: https://${SITE_ADDRESS:-localhost}
+    volumes:
+      - api-data:/data
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  api-data:
+  caddy-data:
+  caddy-config:

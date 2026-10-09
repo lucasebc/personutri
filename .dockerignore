@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/out
+**/dist
+backend/data
+apps
+packages
+docs
+.git

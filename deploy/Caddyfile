@@ -1,0 +1,24 @@
+# SITE_ADDRESS = seu domínio (ex.: nutri.exemplo.com) → certificado Let's Encrypt automático.
+# Em testes locais use "localhost" (certificado de uma CA interna do Caddy).
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+	}
+
+	# A API fica na mesma origem do site (sem CORS) e exige o token Bearer.
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		root * /srv/web
+		# Next.js exporta /agenda como agenda.html
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+}

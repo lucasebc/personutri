@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { AuthModule } from './auth/auth.module';
 import { BodyModule } from './body/body.module';
 import { BodyProfile, WeightEntry } from './body/body.entity';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -12,6 +13,8 @@ import { DiaryModule } from './diary/diary.module';
 import { Activity, Workout } from './exercise/exercise.entity';
 import { ExerciseModule } from './exercise/exercise.module';
 import { Food } from './foods/food.entity';
+import { IdempotencyKey } from './idempotency/idempotency.entity';
+import { IdempotencyModule } from './idempotency/idempotency.module';
 import { FoodsModule } from './foods/foods.module';
 import { ForecastModule } from './forecast/forecast.module';
 import { Meal, MealItem } from './meals/meal.entity';
@@ -25,11 +28,13 @@ if (DATABASE_PATH !== ':memory:') mkdirSync(dirname(DATABASE_PATH), { recursive:
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
       database: DATABASE_PATH,
-      entities: [Food, Meal, MealItem, Diet, DietEntry, DiaryEntry, DiaryItem, BodyProfile, WeightEntry, Activity, Workout],
+      entities: [Food, Meal, MealItem, Diet, DietEntry, DiaryEntry, DiaryItem, BodyProfile, WeightEntry, Activity, Workout, IdempotencyKey],
       // App pessoal de usuário único: o esquema é sincronizado automaticamente.
       synchronize: true,
       foreignKeys: true,
     } as never),
+    AuthModule,
+    IdempotencyModule,
     FoodsModule,
     MealsModule,
     DietsModule,

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsNumber, IsOptional, Matches, Max, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsNumber, IsOptional, Matches, Max, Min, ValidateNested } from 'class-validator';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -56,4 +56,21 @@ export class WeightDto {
 
   @IsOptional() @IsNumber() @Min(30) @Max(250) @Type(() => Number)
   waistCm?: number | null;
+}
+
+export class WeightImportItemDto {
+  @Matches(DATE, { message: 'date deve estar no formato YYYY-MM-DD' })
+  date: string;
+
+  @IsNumber() @Min(20) @Max(400) @Type(() => Number)
+  weightKg: number;
+
+  @IsOptional() @IsNumber() @Min(2) @Max(70) @Type(() => Number)
+  bodyFatPct?: number | null;
+}
+
+export class WeightImportDto {
+  @IsArray() @ArrayMaxSize(500) @ValidateNested({ each: true })
+  @Type(() => WeightImportItemDto)
+  items: WeightImportItemDto[];
 }

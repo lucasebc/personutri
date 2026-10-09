@@ -55,6 +55,10 @@ export class ActivitiesService implements OnModuleInit {
     return a;
   }
 
+  findByName(name: string): Promise<Activity | null> {
+    return this.repo.findOneBy({ name });
+  }
+
   create(dto: ActivityDto): Promise<Activity> {
     return this.repo.save(
       this.repo.create({

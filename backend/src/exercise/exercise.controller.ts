@@ -53,7 +53,7 @@ export class WorkoutsController {
   @Post('import')
   @HttpCode(200)
   import(@Body() dto: ImportDto) {
-    return this.workouts.import(dto.items);
+    return this.workouts.import(dto.items, dto.deletedExternalIds ?? [], dto.source ?? 'device');
   }
 
   @Put(':id')

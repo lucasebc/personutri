@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Put, Post, Query } from '@nestjs/common';
-import { ProfileDto, WeightDto } from './body.dto';
+import { ProfileDto, WeightDto, WeightImportDto } from './body.dto';
 import { BodyService } from './body.service';
 
 @Controller('body')
@@ -27,6 +27,13 @@ export class BodyController {
   async addWeight(@Body() dto: WeightDto) {
     await this.body.upsertWeight(dto);
     return this.body.summary();
+  }
+
+  /** Importação idempotente de pesagens de um dispositivo (Health Connect). */
+  @Post('weights/import')
+  @HttpCode(200)
+  importWeights(@Body() dto: WeightImportDto) {
+    return this.body.importWeights(dto.items);
   }
 
   @Delete('weights/:id')

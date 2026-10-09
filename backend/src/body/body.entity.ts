@@ -58,4 +58,8 @@ export class WeightEntry implements WeightEntryData {
 
   @Column({ type: 'float', nullable: true })
   waistCm: number | null;
+
+  /** manual = digitado por você; device = importado do relógio/balança (não sobrescreve o manual). */
+  @Column({ type: 'varchar', default: 'manual' })
+  source: 'manual' | 'device';
 }

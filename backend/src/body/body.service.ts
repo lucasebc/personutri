@@ -54,7 +54,34 @@ export class BodyService {
     entry.weightKg = dto.weightKg;
     entry.bodyFatPct = dto.bodyFatPct ?? null;
     entry.waistCm = dto.waistCm ?? null;
+    entry.source = 'manual';
     return this.weights.save(entry);
+  }
+
+  /**
+   * Importa pesagens de um dispositivo (uma por dia). Idempotente; nunca sobrescreve uma pesagem manual do mesmo dia.
+   */
+  async importWeights(items: Array<{ date: string; weightKg: number; bodyFatPct?: number | null }>) {
+    let created = 0;
+    let updated = 0;
+    let skippedManual = 0;
+    const today = todayInTz();
+    for (const item of items) {
+      if (!isValidDate(item.date) || item.date > today) continue;
+      const existing = await this.weights.findOneBy({ date: item.date });
+      if (existing && existing.source !== 'device') {
+        skippedManual++;
+        continue;
+      }
+      const entry = existing ?? this.weights.create({ date: item.date, waistCm: null });
+      entry.weightKg = item.weightKg;
+      entry.bodyFatPct = item.bodyFatPct ?? null;
+      entry.source = 'device';
+      await this.weights.save(entry);
+      if (existing) updated++;
+      else created++;
+    }
+    return { created, updated, skippedManual };
   }
 
   async removeWeight(id: number): Promise<void> {

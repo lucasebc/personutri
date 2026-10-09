@@ -73,4 +73,6 @@ export const CATALOG: CatalogEntry[] = [
   { name: 'Faxina geral', category: 'Dia a dia', calcMode: 'met', met: 3.3 },
   { name: 'Jardinagem', category: 'Dia a dia', calcMode: 'met', met: 3.8 },
   { name: 'Passear com o cachorro', category: 'Dia a dia', calcMode: 'met', met: 3.0 },
+  // Genérica (importações de tipos sem equivalente)
+  { name: 'Outra atividade', category: 'Outros', calcMode: 'met', met: 4.0 },
 ];

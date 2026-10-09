@@ -17,7 +17,7 @@ const profile: BodyProfile = {
   activityMode: 'level',
 };
 
-const w = (date: string, weightKg: number): WeightEntry => ({ id: 0, date, weightKg, bodyFatPct: null, waistCm: null });
+const w = (date: string, weightKg: number): WeightEntry => ({ id: 0, date, weightKg, bodyFatPct: null, waistCm: null, source: 'manual' });
 
 // 2026-09-07 é segunda-feira
 const W1 = '2026-09-07';

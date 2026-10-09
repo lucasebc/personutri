@@ -9,16 +9,41 @@ export class ApiError extends Error {
   }
 }
 
+const TOKEN_KEY = 'personutri:token';
+
+/** Token de acesso à API (guardado só neste navegador). */
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token.trim());
+}
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+export const authHeaders = (): Record<string, string> => {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(), ...init?.headers },
       cache: 'no-store',
     });
   } catch {
     throw new ApiError('Não foi possível conectar à API. O backend está rodando?', 0);
+  }
+  if (res.status === 401) {
+    window.dispatchEvent(new Event('personutri:unauthorized'));
+    throw new ApiError('Token de acesso inválido ou ausente.', 401);
   }
   if (!res.ok) {
     let message = `Erro ${res.status}`;

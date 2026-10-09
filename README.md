@@ -53,7 +53,15 @@ npm run seed:demo
 Configuração: `backend/.env.example` (variáveis de ambiente da API) e `frontend/.env.example`
 (`NEXT_PUBLIC_API_URL`, padrão `http://localhost:3001/api`). O banco fica em `backend/data/personutri.sqlite`.
 
-Testes: `npm test` (42 unitários + 32 e2e HTTP contra SQLite em memória, com o Open Food Facts simulado).
+Testes: `npm test` (45 unitários + 50 e2e HTTP contra SQLite em memória, com o Open Food Facts simulado).
+
+## Segurança e implantação
+
+- A API aceita **tokens Bearer** (`API_TOKENS`, um por dispositivo). Sem tokens ela fica aberta (apenas
+  desenvolvimento local) e **se recusa a subir em produção**. O site Next.js pede o token na primeira visita.
+- Requisições com `Idempotency-Key` são idempotentes (o app Android usa isso para reenviar a fila offline sem duplicar).
+- `POST /api/workouts/import` e `POST /api/body/weights/import` recebem dados do Health Connect (idempotentes).
+- **Deploy com HTTPS** (Docker + Caddy, Let's Encrypt automático): veja [`deploy/README.md`](deploy/README.md).
 
 ## Como funciona
 

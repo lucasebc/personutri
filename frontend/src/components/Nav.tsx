@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { clearToken, getToken } from '@/lib/api';
 
 const LINKS = [
   { href: '/', label: 'Dashboard', icon: '📊' },
@@ -15,6 +17,8 @@ const LINKS = [
 
 export function Nav() {
   const pathname = usePathname();
+  const [hasToken, setHasToken] = useState(false);
+  useEffect(() => setHasToken(!!getToken()), []);
   const active = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
   return (
     <>
@@ -35,6 +39,17 @@ export function Nav() {
               </Link>
             ))}
           </nav>
+          {hasToken && (
+            <button
+              className="btn btn-sm ml-auto"
+              onClick={() => {
+                clearToken();
+                location.reload();
+              }}
+            >
+              Sair
+            </button>
+          )}
         </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 border-t border-line bg-surface md:hidden" aria-label="Principal">

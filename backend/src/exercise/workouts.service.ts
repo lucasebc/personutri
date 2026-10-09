@@ -7,6 +7,7 @@ import { addDays, isValidDate, todayInTz } from '../common/dates';
 import { ActivitiesService } from './activities.service';
 import { Activity, Workout } from './exercise.entity';
 import { ImportWorkoutDto, WorkoutDto } from './exercise.dto';
+import { activityNameForExerciseType, GENERIC_ACTIVITY } from './health-connect-map';
 import { workoutTotals, workoutView } from './workout-view';
 
 @Injectable()
@@ -59,18 +60,30 @@ export class WorkoutsService {
 
   /**
    * Importação em lote (ex.: de um app que lê o Health Connect do relógio). Idempotente:
-   * (source, externalId) já existente é atualizado em vez de duplicado.
+   * (source, externalId) já existente é atualizado em vez de duplicado. O tipo de exercício do
+   * Health Connect é mapeado para o catálogo; sem equivalente (ou sem dados para o cálculo) usa-se
+   * a atividade genérica, mantendo as calorias do relógio quando houver.
    */
-  async import(items: ImportWorkoutDto[]) {
+  async import(items: ImportWorkoutDto[], deletedExternalIds: string[] = [], defaultSource: 'manual' | 'device' = 'device') {
     let created = 0;
     let updated = 0;
+    let deleted = 0;
     const errors: Array<{ index: number; message: string }> = [];
+
     for (const [index, item] of items.entries()) {
       try {
-        const source = item.source ?? 'device';
+        const source = item.source ?? defaultSource;
         const existing = await this.repo.findOneBy({ source, externalId: item.externalId });
         const w = existing ?? this.repo.create({ source, externalId: item.externalId });
-        await this.fill(w, item);
+        let activity = item.activityId
+          ? await this.activities.get(item.activityId).catch(() => null)
+          : await this.activities.findByName(activityNameForExerciseType(item.exerciseType));
+        if (!activity) throw new BadRequestException(`Atividade não encontrada para o item ${item.externalId}`);
+        const hasSpeed = item.speedKmh != null || item.distanceKm != null;
+        if (activity.calcMode !== 'met' && !hasSpeed && item.deviceActiveKcal == null) {
+          activity = (await this.activities.findByName(GENERIC_ACTIVITY)) ?? activity;
+        }
+        await this.fill(w, { ...item, activityId: activity.id, notes: item.title });
         await this.repo.save(w);
         if (existing) updated++;
         else created++;
@@ -78,7 +91,15 @@ export class WorkoutsService {
         errors.push({ index, message: (e as Error).message });
       }
     }
-    return { created, updated, errors };
+
+    for (const externalId of deletedExternalIds) {
+      const found = await this.repo.findOneBy({ source: defaultSource, externalId });
+      if (found) {
+        await this.repo.remove(found);
+        deleted++;
+      }
+    }
+    return { created, updated, deleted, errors };
   }
 
   private async viewOf(w: Workout) {
@@ -86,7 +107,7 @@ export class WorkoutsService {
     return workoutView(w, weightOn(w.date, ctx.weights)?.weightKg ?? null);
   }
 
-  private async fill(w: Workout, dto: WorkoutDto) {
+  private async fill(w: Workout, dto: Omit<WorkoutDto, 'activityId'> & { activityId: number }) {
     if (!isValidDate(dto.date)) throw new BadRequestException('Data inválida');
     if (dto.date > addDays(todayInTz(), 1)) throw new BadRequestException('A data do treino não pode estar no futuro');
     const activity: Activity = await this.activities.get(dto.activityId).catch(() => {

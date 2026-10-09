@@ -20,4 +20,5 @@ export interface WeightEntryData {
   weightKg: number;
   bodyFatPct: number | null;
   waistCm: number | null;
+  source?: 'manual' | 'device';
 }

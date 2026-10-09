@@ -341,7 +341,7 @@ describe('PersoNutri API (e2e)', () => {
     it('importação em lote é idempotente', async () => {
       const item = { externalId: 'hc-123', date: today, time: '07:00', activityId: walkId, durationMin: 45, distanceKm: 4, deviceActiveKcal: 210, avgHeartRate: 120 };
       const first = (await http().post('/api/workouts/import').send({ items: [item] }).expect(200)).body;
-      expect(first).toEqual({ created: 1, updated: 0, errors: [] });
+      expect(first).toEqual({ created: 1, updated: 0, deleted: 0, errors: [] });
       const again = (await http().post('/api/workouts/import').send({ items: [{ ...item, deviceActiveKcal: 230 }, { ...item, externalId: 'hc-bad', activityId: 999999 }] })).body;
       expect(again.created).toBe(0);
       expect(again.updated).toBe(1);
