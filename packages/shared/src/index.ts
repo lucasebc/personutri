@@ -8,3 +8,4 @@ export * from './health/reminders';
 export * from './calories';
 export * from './dashboard-pending';
 export * from './micros';
+export * from './health/runner';

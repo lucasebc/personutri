@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import '@/native/health-task'; // registra a tarefa em segundo plano no escopo global
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { OutboxProvider } from '@/lib/outbox';

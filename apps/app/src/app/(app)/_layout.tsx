@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Redirect, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { ReminderSync } from '@/features/ReminderSync';
 import { prefetchEssentials } from '@/lib/queries';
 import { useSession } from '@/lib/session';
 import { Loading } from '@/ui/primitives';
@@ -17,5 +18,10 @@ export default function AppLayout() {
 
   if (!ready) return <Loading />;
   if (!configured || unauthorized) return <Redirect href="/login" />;
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <ReminderSync />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

@@ -2,10 +2,9 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type ApiClient, createApiClient, normalizeBaseUrl } from '@personutri/shared';
+import { TOKEN_KEY, URL_KEY } from './keys';
 import { deleteSecret, getSecret, setSecret } from './storage';
 
-const URL_KEY = 'personutri:baseUrl';
-const TOKEN_KEY = 'personutri:token';
 
 interface SessionCtx {
   /** Terminou de ler o armazenamento. */
