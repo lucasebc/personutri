@@ -3,7 +3,10 @@
 Objetivo: um app **completo** em React Native/Expo, rodando no Android e no navegador, com **todas as funções que o web
 já tem** e, no Android, a sincronização de treinos do Galaxy Watch 5 via Health Connect.
 
-> Estado: planejamento. Nada deste plano foi implementado ainda. Versões consultadas em 09/10/2026: Expo SDK 57,
+> **Estado (fases 0–5 implementadas)**: o plano abaixo foi executado, com uma mudança de rumo — **o web continua sendo o
+> Next.js** (`frontend/`); o Expo roda no navegador apenas como *ambiente de teste* (Playwright), não é publicado. As
+> decisões em aberto da §9 estão respondidas lá. Para compilar e testar no aparelho, veja [ANDROID.md](./ANDROID.md).
+> Versões consultadas em 09/10/2026: Expo SDK 57,
 > React Native 0.87, expo-router 57, `react-native-health-connect` 4.1.3, NativeWind 4.2.7 (a 5.x ainda é RC).
 
 ## 1. Decisões de arquitetura
@@ -11,7 +14,7 @@ já tem** e, no Android, a sincronização de treinos do Galaxy Watch 5 via Heal
 | # | Decisão | Por quê | Risco / como validar |
 |---|---|---|---|
 | 1 | **App universal Expo** (Expo Router): mesma base para Android e web | Você quer usar nos dois; escrever uma vez evita manter duas interfaces | Pacotes só-celular quebram no web → isolar em arquivos `.native.tsx` / `.web.tsx` (Fase 0 valida) |
-| 2 | **Next.js atual fica no ar até a paridade**, depois é aposentado | Nenhum momento sem web funcionando | Decisão final na Fase 5 |
+| 2 | ~~Next.js aposentado depois da paridade~~ **Decisão final: o Next.js fica** como interface web | Você preferiu manter o web como está | O app Expo só é exportado para web dentro dos testes |
 | 3 | **Estilo com tema próprio + `StyleSheet`**, sem NativeWind | A v4 estável depende do Tailwind 3 (o web usa Tailwind 4) e a v5 é RC: risco de retrabalho | Reaproveito as mesmas cores (tokens do `globals.css`) |
 | 4 | **Gráficos próprios com `react-native-svg`** (anel, rosca, barras+linhas, linhas) | Recharts é DOM e não roda no celular; só há 4 tipos de gráfico, e SVG funciona igual no web | Validar no web com Playwright (Fase 0) |
 | 5 | **TanStack Query** para dados, no lugar do `useFetch` | Cache, invalidação após mutações e atualização otimista (checkbox da agenda) funcionam em RN e web | — |
@@ -135,10 +138,19 @@ Tamanhos relativos (P/M/G); não estimo datas.
 | Pacote só-celular quebrando o web | Isolamento por plataforma desde a Fase 0 |
 | API exposta sem proteção | Fase 1 vem antes de qualquer app falar com o servidor |
 
-## 9. Decisões em aberto (preciso de você)
+## 9. Decisões (respondidas)
 
-1. **Web pelo Expo** (recomendado) ou manter o Next.js indefinidamente?
-2. **Acesso ao servidor**: domínio com HTTPS (Caddy) ou VPN (Tailscale)?
-3. **Build**: EAS na nuvem (conta Expo) ou Android Studio/Gradle local?
-4. **Pacote Android** (`com.lucasebc.personutri`, por padrão) e nome do app.
-5. **Offline**: basta leitura em cache (Fase 5) ou você quer registrar sem sinal e sincronizar depois?
+1. **Web**: fica no Next.js. O Expo web é só harness de teste.
+2. **Acesso ao servidor**: HTTPS com Caddy (`deploy/`). HTTP só em rede local, com `APP_ALLOW_HTTP=1` ao gerar o app.
+3. **Build**: Android Studio / Gradle local (`expo prebuild` + `expo run:android`). Sem EAS.
+4. **Pacote**: `com.lucasebc.personutri`.
+5. **Offline**: registrar sem sinal e sincronizar depois (fila com `Idempotency-Key`, ver `packages/shared/src/outbox`).
+
+## 10. O que foi verificado e o que não foi
+
+- **Verificado aqui**: testes do backend (unitários e e2e), testes do pacote compartilhado, `tsc`, exportação do bundle
+  Android (Hermes) e do web, `expo prebuild` (manifesto e permissões) e 27 testes Playwright do app contra a API real,
+  incluindo cenários offline.
+- **Não verificado (só no seu aparelho)**: tudo o que chama código nativo — permissões e leitura do Health Connect,
+  tarefa em segundo plano, notificações, câmera/leitor de código de barras e a compilação Gradle. Também não foram
+  testados o Open Food Facts ao vivo nem o deploy Docker/Caddy. O roteiro de teste está em [ANDROID.md](./ANDROID.md).

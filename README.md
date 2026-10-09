@@ -107,25 +107,47 @@ backend/src
   meals/      refeições        diets/     dietas e agenda semanal
   diary/      agenda do dia    body/      perfil, pesagens, BMR/TDEE/metas
   dashboard/  totais do dia    forecast/  previsão semanal de peso
-frontend/src/app   dashboard, agenda, refeicoes, dietas, alimentos, corpo
+frontend/src/app   site Next.js: dashboard, agenda, refeicoes, dietas, alimentos, exercicios, corpo
+apps/app/src       app Android (Expo): telas, fila offline, módulos nativos (src/native)
+packages/shared    cliente da API, tipos, cálculo e fila offline compartilhados
+deploy/            Docker + Caddy (HTTPS)
+docs/mobile        plano e guia do app Android
 ```
 
-## Conectando o Galaxy Watch 5
+## App Android (React Native / Expo)
 
-- **Google Fit não serve**: a API REST do Google Fit não aceita novos desenvolvedores desde maio de 2024 e vai até o
-  fim de 2026, sem substituta equivalente
-  ([FAQ do Android](https://developer.android.com/health-and-fitness/guides/health-connect/migrate/migration-faq)).
-- **Caminho viável**: o relógio sincroniza com o Samsung Health, que grava no **Health Connect** (API só *no aparelho*
-  Android, sem REST). Para chegar a este servidor é preciso um app no celular que leia o Health Connect e envie os
-  treinos — ou exportar manualmente o CSV do Samsung Health.
-- **Pronto para isso**: `POST /api/workouts/import` recebe uma lista de treinos (`externalId`, `activityId`, data,
-  duração, `deviceActiveKcal`, `avgHeartRate`, distância…) e é idempotente (reenviar atualiza, não duplica). Falta só o
-  app/conversor que leia o Health Connect e faça esse POST.
+`apps/app` é um app Android completo, com as mesmas telas do site (Hoje, Agenda, Refeições, Dietas, Alimentos,
+Exercícios, Corpo), **registro sem sinal com sincronização depois**, leitor de código de barras, lembretes de refeição e
+a sincronização de treinos/peso com o **Health Connect** (Galaxy Watch 5 → Samsung Health → Health Connect → servidor).
+O site continua sendo o Next.js de `frontend/`.
+
+- Compilar, instalar e roteiro de teste no aparelho: [docs/mobile/ANDROID.md](docs/mobile/ANDROID.md).
+- Plano e decisões: [docs/mobile/PLANO.md](docs/mobile/PLANO.md).
+- `packages/shared`: cliente da API, formatação, cálculo de calorias, fila offline e planejador da sincronização —
+  código puro compartilhado e testado (`npm run app:test`).
+
+**Por que Health Connect?** O Google Fit (REST) não aceita novos desenvolvedores desde maio de 2024. O Health Connect
+só existe *no aparelho*, por isso o app lê lá e envia para `POST /api/workouts/import` (idempotente: reenviar
+atualiza, não duplica) e `POST /api/body/weights/import`. Também dá para importar manualmente por essa API.
+
+## Testes e CI
+
+```bash
+npm test               # backend: unitários + e2e
+npm run app:typecheck  # app + shared
+npm run app:test       # shared (Jest)
+npm run app:e2e        # builda backend + web do app e roda o Playwright contra a API real
+```
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda tudo isso, além da exportação do bundle Android e do build do site.
 
 ## Limitações conhecidas
 
-- App de **usuário único, sem autenticação** — pensado para uso pessoal/local. Antes de expor na internet, adicione
-  autenticação e troque o SQLite por um banco servidor.
+- App de **usuário único**, com autenticação apenas por token Bearer (`API_TOKENS`). Sirva sempre por HTTPS
+  (`deploy/`) e considere trocar o SQLite por um banco servidor se for crescer.
+- O código nativo do app Android (Health Connect, segundo plano, notificações, câmera) não pôde ser executado onde foi
+  escrito; foi validado por tipos, bundle e `prebuild`. O Open Food Facts ao vivo e o deploy Docker/Caddy também não
+  foram testados ponta a ponta.
 - O esquema do banco é sincronizado automaticamente (`synchronize: true`); para produção, use migrations.
 - Quantidades em gramas (ou ml); ainda não há medidas caseiras ("1 colher", "1 fatia") — só a porção do rótulo
   quando o Open Food Facts informa.
