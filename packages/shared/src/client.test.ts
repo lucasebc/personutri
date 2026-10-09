@@ -67,4 +67,17 @@ describe('createApiClient', () => {
     const c = createApiClient({ baseUrl: () => null, token: () => null });
     await expect(c.get('/x')).rejects.toThrow('Servidor não configurado');
   });
+
+  it('informa se o servidor está alcançável a cada requisição', async () => {
+    const results: boolean[] = [];
+    const ok = createApiClient({ ...base, onNetworkResult: (r) => results.push(r), fetchImpl: fakeFetch(() => json({})).impl });
+    await ok.get('/x');
+    const bad = createApiClient({ ...base, onNetworkResult: (r) => results.push(r), fetchImpl: fakeFetch(() => json({ message: 'x' }, 400)).impl });
+    await bad.get('/x').catch(() => {}); // erro de validação: o servidor respondeu
+    const down = createApiClient({ ...base, onNetworkResult: (r) => results.push(r), fetchImpl: (async () => { throw new TypeError('x'); }) as unknown as typeof fetch });
+    await down.get('/x').catch(() => {});
+    const gw = createApiClient({ ...base, onNetworkResult: (r) => results.push(r), fetchImpl: fakeFetch(() => new Response('', { status: 503 })).impl });
+    await gw.get('/x').catch(() => {});
+    expect(results).toEqual([true, true, false, false]);
+  });
 });

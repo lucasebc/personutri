@@ -31,10 +31,10 @@ export function Text({ v = 'body', muted, color, num, style, ...rest }: AppTextP
   );
 }
 
-export function Card({ title, action, children, style }: { title?: string; action?: ReactNode; children: ReactNode; style?: ViewStyle }) {
+export function Card({ title, action, children, style, testID }: { title?: string; action?: ReactNode; children: ReactNode; style?: ViewStyle; testID?: string }) {
   const { colors } = useTheme();
   return (
-    <View style={[{ backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 }, style]}>
+    <View testID={testID} style={[{ backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 }, style]}>
       {(title || action) && (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           {title ? <Text v="label">{title}</Text> : <View />}
@@ -68,7 +68,7 @@ export function Button({ title, onPress, variant = 'default', size = 'md', disab
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityState={{ disabled: !!off }}
+      aria-disabled={!!off}
       testID={testID}
       disabled={off}
       onPress={onPress}
@@ -170,7 +170,9 @@ export function Bar({ value, max, color, over }: { value: number; max: number; c
   return (
     <View
       accessibilityRole="progressbar"
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pct)}
       style={{ height: 8, borderRadius: 999, backgroundColor: colors.surface2, overflow: 'hidden' }}
     >
       <View style={{ width: `${Math.min(pct, 100)}%`, height: '100%', borderRadius: 999, backgroundColor: pct > 105 ? (over ?? colors.bad) : (color ?? colors.accent) }} />

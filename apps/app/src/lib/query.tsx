@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -29,10 +28,9 @@ export function QueryProvider({ children, client }: { children: ReactNode; clien
   const [persister] = useState(() => createAsyncStoragePersister({ storage: AsyncStorage, key: 'personutri-cache', throttleTime: 1000 }));
 
   useEffect(() => {
-    onlineManager.setEventListener((setOnline) => {
-      const unsub = NetInfo.addEventListener((s) => setOnline(s.isConnected !== false && s.isInternetReachable !== false));
-      return unsub;
-    });
+    // O app decide sozinho o que fazer sem conexão (cache + fila): o React Query nunca deve "pausar" as consultas.
+    onlineManager.setOnline(true);
+    onlineManager.setEventListener(() => () => {});
   }, []);
 
   return (

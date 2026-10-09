@@ -14,3 +14,5 @@ apps/app/dist/
 apps/app/dist-android/
 apps/app/.expo/
 apps/app/expo-env.d.ts
+apps/app/test-results/
+apps/app/playwright-report/

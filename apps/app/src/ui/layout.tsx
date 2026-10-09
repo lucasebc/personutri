@@ -49,7 +49,7 @@ export function Screen({
   );
   const pad = { paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 24, gap: 14, maxWidth: 760, width: '100%' as const, alignSelf: 'center' as const };
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View testID={`screen-${title}`} style={{ flex: 1, backgroundColor: colors.bg }}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={pad}

@@ -46,12 +46,12 @@ export function MultiLine({
         <Line key={t} x1={m.l} x2={width - m.r} y1={y(t)} y2={y(t)} stroke={colors.border} strokeWidth={1} />
       ))}
       {ticks.map((t) => (
-        <SvgText key={`l${t}`} x={m.l - 6} y={y(t) + 3} textAnchor="end" fontSize="9" fill={colors.muted}>{fmt(t, 1)}</SvgText>
+        <SvgText fontFamily="sans-serif" key={`l${t}`} x={m.l - 6} y={y(t) + 3} textAnchor="end" fontSize="9" fill={colors.muted}>{fmt(t, 1)}</SvgText>
       ))}
       {refLine ? (
         <>
           <Line x1={m.l} x2={width - m.r} y1={y(refLine.value)} y2={y(refLine.value)} stroke={refLine.color} strokeWidth={1.5} strokeDasharray="2 4" />
-          <SvgText x={width - m.r} y={y(refLine.value) - 4} textAnchor="end" fontSize="9" fill={refLine.color}>{refLine.label}</SvgText>
+          <SvgText fontFamily="sans-serif" x={width - m.r} y={y(refLine.value) - 4} textAnchor="end" fontSize="9" fill={refLine.color}>{refLine.label}</SvgText>
         </>
       ) : null}
       {series.map((s) => {
@@ -59,7 +59,7 @@ export function MultiLine({
         return d ? <Path key={s.name} d={d} stroke={s.color} strokeWidth={s.points ? 2.5 : 2} fill="none" strokeDasharray={s.dotted ? '2 4' : s.dashed ? '6 4' : undefined} /> : null;
       })}
       {series.flatMap((s) => (s.points ? s.values.map((v, i) => (v == null ? null : <Circle key={`${s.name}${i}`} cx={x(i)} cy={y(v)} r={3.5} fill={colors.surface} stroke={s.color} strokeWidth={2} />)) : []))}
-      {xLabels.map((l, i) => (i % every === 0 ? <SvgText key={`x${i}`} x={x(i)} y={height - 8} textAnchor="middle" fontSize="9" fill={colors.muted}>{l}</SvgText> : null))}
+      {xLabels.map((l, i) => (i % every === 0 ? <SvgText fontFamily="sans-serif" key={`x${i}`} x={x(i)} y={height - 8} textAnchor="middle" fontSize="9" fill={colors.muted}>{l}</SvgText> : null))}
     </Svg>
   );
 }

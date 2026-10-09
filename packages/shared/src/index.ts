@@ -5,3 +5,6 @@ export * from './items';
 export * from './outbox';
 export * from './health/sync';
 export * from './health/reminders';
+export * from './calories';
+export * from './dashboard-pending';
+export * from './micros';

@@ -34,7 +34,7 @@ export function BarsLines({ data, width = 340, height = 210 }: { data: BarLinePo
         <Line key={t} x1={m.l} x2={width - m.r} y1={y(t)} y2={y(t)} stroke={colors.border} strokeWidth={1} />
       ))}
       {ticks.map((t) => (
-        <SvgText key={`l${t}`} x={m.l - 6} y={y(t) + 3} textAnchor="end" fontSize="9" fill={colors.muted}>{fmt(t)}</SvgText>
+        <SvgText fontFamily="sans-serif" key={`l${t}`} x={m.l - 6} y={y(t) + 3} textAnchor="end" fontSize="9" fill={colors.muted}>{fmt(t)}</SvgText>
       ))}
       {data.map((d, i) => (
         <Rect key={d.label} x={cx(i) - bw / 2} y={y(d.bar)} width={bw} height={Math.max(m.t + ih - y(d.bar), 0)} rx={4} fill={colors.accent} />
@@ -42,7 +42,7 @@ export function BarsLines({ data, width = 340, height = 210 }: { data: BarLinePo
       {path('tdee') ? <Path d={path('tdee')} stroke={colors.fat} strokeWidth={2} fill="none" /> : null}
       {path('target') ? <Path d={path('target')} stroke={colors.muted} strokeWidth={2} strokeDasharray="5 4" fill="none" /> : null}
       {data.map((d, i) => (
-        <SvgText key={`x${d.label}`} x={cx(i)} y={height - 8} textAnchor="middle" fontSize="9" fill={colors.muted}>{d.label}</SvgText>
+        <SvgText fontFamily="sans-serif" key={`x${d.label}`} x={cx(i)} y={height - 8} textAnchor="middle" fontSize="9" fill={colors.muted}>{d.label}</SvgText>
       ))}
     </Svg>
   );

@@ -52,7 +52,8 @@ export interface FoodSearch {
   offError?: string;
 }
 
-export type CalcMode = 'met' | 'walk' | 'run' | 'cycle';
+import type { CalcMode } from './calories';
+export type { CalcMode };
 
 export interface Activity {
   id: number;

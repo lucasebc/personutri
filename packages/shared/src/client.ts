@@ -16,6 +16,8 @@ export interface ClientConfig {
   token: () => string | null;
   /** Chamado em respostas 401 (token recusado). */
   onUnauthorized?: () => void;
+  /** Chamado a cada requisição: true = o servidor respondeu; false = sem resposta (rede, servidor fora do ar, 502-504). */
+  onNetworkResult?: (reachable: boolean) => void;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 }
@@ -60,10 +62,12 @@ export function createApiClient(cfg: ClientConfig) {
         signal: ctl.signal,
       });
     } catch {
+      cfg.onNetworkResult?.(false);
       throw new ApiError('Sem conexão com o servidor.', 0, true);
     } finally {
       clearTimeout(timer);
     }
+    cfg.onNetworkResult?.(!(res.status >= 502 && res.status <= 504));
 
     if (res.status === 401) {
       cfg.onUnauthorized?.();

@@ -23,8 +23,8 @@ export function Ring({ value, max, size = 140, caption }: { value: number; max: 
         strokeDasharray={`${pct * c} ${c}`}
         transform="rotate(-90 65 65)"
       />
-      <SvgText x="65" y="64" textAnchor="middle" fontSize="24" fontWeight="700" fill={colors.text}>{fmt(value)}</SvgText>
-      <SvgText x="65" y="81" textAnchor="middle" fontSize="10" fill={colors.muted}>{caption ?? `de ${fmt(max)} kcal`}</SvgText>
+      <SvgText fontFamily="sans-serif" x="65" y="64" textAnchor="middle" fontSize="24" fontWeight="700" fill={colors.text}>{fmt(value)}</SvgText>
+      <SvgText fontFamily="sans-serif" x="65" y="81" textAnchor="middle" fontSize="10" fill={colors.muted}>{caption ?? `de ${fmt(max)} kcal`}</SvgText>
     </Svg>
   );
 }

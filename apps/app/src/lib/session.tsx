@@ -1,3 +1,4 @@
+import { useNetInfo } from '@react-native-community/netinfo';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type ApiClient, createApiClient, normalizeBaseUrl } from '@personutri/shared';
@@ -15,6 +16,11 @@ interface SessionCtx {
   configured: boolean;
   /** O servidor recusou o token (401). */
   unauthorized: boolean;
+  /**
+   * O servidor respondeu à última requisição? `null` = ainda não se sabe. É a fonte da verdade para "online":
+   * o NetInfo só serve de gatilho (ele erra em alguns ambientes).
+   */
+  reachable: boolean | null;
   client: ApiClient;
   save: (url: string, token: string | null) => Promise<void>;
   logout: () => Promise<void>;
@@ -27,6 +33,7 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
   const [baseUrl, setBaseUrl] = useState<string | null>(initial?.baseUrl ?? null);
   const [token, setToken] = useState<string | null>(initial?.token ?? null);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [reachable, setReachable] = useState<boolean | null>(null);
   const ref = useRef({ baseUrl, token });
   ref.current = { baseUrl, token };
 
@@ -46,6 +53,7 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
         baseUrl: () => ref.current.baseUrl,
         token: () => ref.current.token,
         onUnauthorized: () => setUnauthorized(true),
+        onNetworkResult: (ok) => setReachable((prev) => (prev === ok ? prev : ok)),
       }),
     [],
   );
@@ -68,9 +76,26 @@ export function SessionProvider({ children, initial }: { children: ReactNode; in
     setUnauthorized(false);
   }, []);
 
+  // Sondagem: enquanto o servidor não responde, pergunta de novo a cada 15 s (rota pública e barata).
+  const probe = useCallback(() => {
+    if (ref.current.baseUrl) client.get('/health').catch(() => {});
+  }, [client]);
+  useEffect(() => {
+    if (reachable !== false) return;
+    const t = setInterval(probe, 15_000);
+    return () => clearInterval(t);
+  }, [reachable, probe]);
+
+  // O NetInfo apenas antecipa: ao perder a rede marca como inacessível; ao ganhar, sonda na hora.
+  const net = useNetInfo();
+  useEffect(() => {
+    if (net.isConnected === false) setReachable(false);
+    else if (net.isConnected === true) probe();
+  }, [net.isConnected, probe]);
+
   const value = useMemo<SessionCtx>(
-    () => ({ ready, baseUrl, token, configured: !!baseUrl, unauthorized, client, save, logout }),
-    [ready, baseUrl, token, unauthorized, client, save, logout],
+    () => ({ ready, baseUrl, token, configured: !!baseUrl, unauthorized, reachable, client, save, logout }),
+    [ready, baseUrl, token, unauthorized, reachable, client, save, logout],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

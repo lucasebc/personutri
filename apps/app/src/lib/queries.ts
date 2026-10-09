@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import {
   type Activity,
@@ -11,11 +11,13 @@ import {
   overlayDiary,
   overlayWeights,
   overlayWorkouts,
+  applyPendingToDashboard,
   type WorkoutDay,
 } from '@personutri/shared';
 import { useOutbox } from './outbox';
 import { qk } from './query';
 import { useApi } from './session';
+import type { ApiClient } from '@personutri/shared';
 
 /** Leituras (com cache offline). As telas combinam com a fila de pendências pelos hooks *View. */
 export function useDashboard(date: string) {
@@ -83,4 +85,28 @@ export function useBodyView() {
 export function useInvalidateAll() {
   const qc = useQueryClient();
   return () => qc.invalidateQueries();
+}
+
+/** Dashboard já ajustado pelas pendências (consumo livre e refeições marcadas offline). */
+export function useDashboardView(date: string) {
+  const dash = useDashboard(date);
+  const diary = useDiaryView(date);
+  const data = useMemo(
+    () => (dash.data && diary.data && diary.entries ? applyPendingToDashboard(dash.data, diary.data.entries, diary.entries) : dash.data),
+    [dash.data, diary.data, diary.entries],
+  );
+  return { ...dash, data, refetchAll: () => Promise.all([dash.refetch(), diary.refetch()]) };
+}
+
+/**
+ * Pré-carrega o que as telas de registro precisam para funcionar sem internet (catálogo de atividades,
+ * refeições, dietas, perfil/pesos e a previsão), para que existam no cache mesmo que você nunca tenha aberto a tela.
+ */
+export function prefetchEssentials(qc: QueryClient, api: ApiClient) {
+  const opts = { staleTime: 5 * 60_000 };
+  void qc.prefetchQuery({ queryKey: qk.activities, queryFn: () => api.get<Activity[]>('/activities'), ...opts });
+  void qc.prefetchQuery({ queryKey: qk.meals, queryFn: () => api.get<Meal[]>('/meals'), ...opts });
+  void qc.prefetchQuery({ queryKey: qk.diets, queryFn: () => api.get<Diet[]>('/diets'), ...opts });
+  void qc.prefetchQuery({ queryKey: qk.body, queryFn: () => api.get<BodySummary>('/body'), ...opts });
+  void qc.prefetchQuery({ queryKey: qk.forecast, queryFn: () => api.get<ForecastResult>('/forecast/weekly?weeks=12&ahead=4'), ...opts });
 }

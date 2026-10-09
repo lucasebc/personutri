@@ -157,7 +157,7 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
           <Pressable
             key={o.value}
             accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
+            aria-selected={on}
             accessibilityLabel={o.label}
             onPress={() => onChange(o.value)}
             style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: on ? colors.accent : colors.border, backgroundColor: on ? colors.accent : colors.surface }}
@@ -177,7 +177,8 @@ export function Check({ checked, onChange, label, disabled, accessibilityLabel }
     <Pressable
       accessibilityRole="checkbox"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ checked, disabled: !!disabled }}
+      aria-checked={checked}
+      aria-disabled={!!disabled}
       disabled={disabled}
       onPress={() => onChange(!checked)}
       hitSlop={8}
@@ -188,5 +189,30 @@ export function Check({ checked, onChange, label, disabled, accessibilityLabel }
       </View>
       {label}
     </Pressable>
+  );
+}
+
+/** Seleção múltipla dos dias da semana (0 = domingo). */
+export function WeekdayPicker({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
+  const { colors } = useTheme();
+  const names = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  return (
+    <Row gap={6} style={{ flexWrap: 'wrap' }}>
+      {names.map((n, i) => {
+        const on = value.includes(i);
+        return (
+          <Pressable
+            key={n}
+            accessibilityRole="button"
+            accessibilityLabel={n}
+            aria-pressed={on}
+            onPress={() => onChange(on ? value.filter((x) => x !== i) : [...value, i].sort((a, b) => a - b))}
+            style={{ minWidth: 42, paddingVertical: 8, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: on ? colors.accent : colors.border, backgroundColor: on ? colors.accent : colors.surface }}
+          >
+            <Text v="small" color={on ? colors.accentText : colors.text} style={{ fontWeight: '600' }}>{n}</Text>
+          </Pressable>
+        );
+      })}
+    </Row>
   );
 }

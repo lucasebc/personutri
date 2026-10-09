@@ -12,7 +12,8 @@
     "seed:demo": "npm --prefix backend run seed:demo",
     "app:start": "npm --workspace @personutri/app run start",
     "app:typecheck": "npm --workspace @personutri/app run typecheck && npm --workspace @personutri/shared run typecheck",
-    "app:test": "npm --workspace @personutri/shared test && npm --workspace @personutri/app test"
+    "app:test": "npm --workspace @personutri/shared test",
+    "app:e2e": "npm --prefix backend run build && npm --workspace @personutri/app run build:web && npm --workspace @personutri/app run e2e"
   },
   "workspaces": [
     "packages/*",
