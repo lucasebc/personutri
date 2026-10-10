@@ -10,6 +10,21 @@ O app (`apps/app`) é Expo/React Native. Como usa o Health Connect, **não roda 
   de verdade num aparelho real com o relógio pareado.**
 - O servidor (`backend`) rodando com `API_TOKENS` definido. Para HTTPS em produção veja `deploy/README.md`.
 
+## Windows: variáveis de ambiente
+
+O Android Studio já inclui um JDK (`jbr`); basta apontar o `JAVA_HOME` para ele. No PowerShell:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android Studio\jbr"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:Path += ";$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools"
+java -version
+adb devices     # o celular deve aparecer (depuração USB ligada)
+```
+
+Para deixar permanente, crie `JAVA_HOME` e `ANDROID_HOME` nas variáveis de ambiente do Windows e reabra o terminal.
+Erro `JAVA_HOME is not set` = falta o primeiro; `SDK location not found` = falta o segundo (ou o SDK 36 não está instalado).
+
 ## Compilar e rodar
 
 ```bash
